@@ -23,7 +23,7 @@ public class TXmlConnector64 {
 
     public native boolean initDll(String path);
 
-    public native boolean SetCallback(Object method);
+    public native boolean SetCallback(Object callback);
 
     public native boolean SetCallbackEx(byte[] pCallback, int userData);
 
@@ -36,4 +36,6 @@ public class TXmlConnector64 {
     public native byte[] UnInitialize();
 
     public native byte[] SetLogLevel(int logLevel);
+
+    public native int GetServiceInfo(String request, Object response);
 }
