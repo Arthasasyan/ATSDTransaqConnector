@@ -10,17 +10,21 @@ public abstract class Command {
 
     private String id;
     private final static String root_tag = "command";
-    public Map<String, XmlElement> elements = new HashMap<>();
+    Map<String, XmlElement> elements = new HashMap<>();
 
-    public String getId() {
+    String getId() {
         return id;
     }
 
-    public void setId(String id) {
+    void setId(String id) {
         this.id = id;
     }
 
-    public String getRoot_tag() {
+    String getRoot_tag() {
         return root_tag;
+    }
+
+    public Map<String, XmlElement> getElements() {
+        return elements;
     }
 }

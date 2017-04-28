@@ -1,13 +1,14 @@
 package pro.belbix.finam.commands;
 
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by vabelyk2 on 28.04.2017.
  */
 public class Connect extends Command{
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Connect.class);
 
     private XmlElement login = new XmlElement("login");
     private XmlElement password = new XmlElement("password");
@@ -26,24 +27,72 @@ public class Connect extends Command{
 
     public Connect() {
         super();
-        Field[] fields = this.getClass().getFields();
+        setId("connect");
+        initElements();
+    }
+    
+    private void initElements(){
+        Field[] fields = this.getClass().getDeclaredFields();
         for (Field field : fields){
-            if (field.getClass().getName().equals(XmlElement.class.getName())){
+            if (field.getType().getName().equals(XmlElement.class.getName())){
                 try {
                     XmlElement el = (XmlElement) field.get(this);
-                    elements.put(el.getName(), el);
+                    elements.put(getUniqueKey(el.getName(), 0), el);
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
             }
         }
     }
+    
+    private String getUniqueKey(String key, int iter){
+        if (elements.containsKey(key)){
+            if (iter == 0)
+                return getUniqueKey(key + String.valueOf(iter), iter + 1);
+            else
+                return getUniqueKey(key, iter + 1);
+        } else {
+            return key;
+        }
+    }
 
     public String getXml(){
         String xml = "";
+        StringBuilder bld = new StringBuilder();
+        bld.append("<");
+        bld.append(getRoot_tag());
+        bld.append(" id=\"");
+        bld.append(getId());
+        bld.append("\">");
 
+        for (XmlElement el : elements.values()){
+            if (el.getBody().equals("") && el.attributs.size() == 0) continue;
+            bld.append("<");
+            bld.append(el.name);
+            if (el.attributs.size() > 0){
+                for(String key : el.attributs.keySet()){
+                    bld.append(" ");
+                    bld.append(key);
+                    bld.append("=\"");
+                    bld.append(el.attributs.get(key));
+                    bld.append("\"");
+                }
+            }
+            if (el.getBody().equals("")) {
+                bld.append("/>");
+            } else {
+                bld.append(">");
+                bld.append(el.getBody());
+                bld.append("</");
+                bld.append(el.getName());
+                bld.append(">");
+            }
+        }
 
-        return xml;
+        bld.append("</");
+        bld.append(getRoot_tag());
+        bld.append(">");
+        return bld.toString();
     }
 
     public XmlElement getLogin() {

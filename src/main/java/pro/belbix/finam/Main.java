@@ -1,11 +1,13 @@
 package pro.belbix.finam;
 
 import org.slf4j.LoggerFactory;
+import pro.belbix.finam.commands.Connect;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created by Belykh Vsevolod on 22.04.2017.
@@ -20,11 +22,13 @@ public class Main {
         Main main = new Main();
 
         main.start();
+
+
+
     }
 
     private void start() {
 //        log.info("Start");
-        byte[] b = {1};
         Integer i = 1;
         Reference<Integer> ref = new SoftReference<>(i);
 
@@ -50,34 +54,39 @@ public class Main {
 
 
         byte[] initRes = con.Initialize("C:/log", 3);
-        //byte[] initRes = con.Initialize("C:log", 3);
 
         String initResStr = new String(initRes);
         log.info("initRes:" + initResStr);
 
-        Callback cb = new Callback();
+        Callback cb = new Callback(new LinkedBlockingQueue<>(10000));
 
         boolean callbackRes = con.SetCallback(cb);
         log.info("callbackRes:" + callbackRes);
 
+        Connect connect = new Connect();
+        connect.getLogin().setBody("TCNN9964");
+        connect.getPassword().setBody("v8JUF8");
+        connect.getHost().setBody("tr1-demo5.finam.ru");
+        connect.getPort().setBody("3939");
+        connect.getAutopos().setBody("false");
+        connect.getMicex_registers().setBody("true");
+        connect.getMilliseconds().setBody("true");
+        connect.getUtc_time().setBody("false");
+        connect.getRqdelay().setBody("1000");
+        connect.getSession_timeout().setBody("10");
+        connect.getRequest_timeout().setBody("5");
+        connect.getProxy().attributs.put("type","HTTP-CONNECT");
+        connect.getProxy().attributs.put("addr","bproxy.msk.mts.ru");
+        connect.getProxy().attributs.put("port","3131");
+        connect.getProxy().attributs.put("login","vabelyk2");
+        connect.getProxy().attributs.put("password","br--tha7");
 
-        String cmdConnect = "<command id=\"connect\">" +
-                "<login>TCNN9964</login>" +
-                "<password>v8JUF8</password>" +
-                "<host>tr1-demo5.finam.ru</host>" +
-                "<port>3939</port>" +
-                "<autopos>false</autopos>" +
-                "<micex_registers>true</micex_registers>" +
-                "<milliseconds>true</milliseconds>" +
-                "<utc_time>false</utc_time>" +
-                "<rqdelay>1000</rqdelay>" +
-                "<session_timeout>10</session_timeout>" +
-                "<request_timeout>5</request_timeout>" +
-                "</command>";
+        log.info("elem size:" + connect.getElements().size());
+        log.info(connect.getXml());
 
 
 
-        String cmdResStr = con.sendCommand(cmdConnect);
+        String cmdResStr = con.sendCommand(connect.getXml());
 
         try {
             Thread.sleep(10_000);
