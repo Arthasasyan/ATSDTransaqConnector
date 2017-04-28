@@ -13,16 +13,39 @@ import java.util.concurrent.LinkedBlockingQueue;
 class Callback {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Callback.class);
 
-    private static BlockingQueue<String> queue;
+    private static BlockingQueue<String> queue = null;
 
-    Callback(BlockingQueue<String> queue) {
+    private static volatile Callback instance;
+
+    static Callback getInstance(BlockingQueue<String> queue) {
+        Callback localInstance = instance;
+        if (localInstance == null) {
+            synchronized (Callback.class) {
+                localInstance = instance;
+                if (localInstance == null) {
+                    instance = localInstance = new Callback(queue);
+                }
+            }
+        }
+        return localInstance;
+    }
+
+
+    private Callback(BlockingQueue<String> queue) {
         Callback.queue = queue;
     }
 
     public synchronized static void callback(byte[] pData) {
-        String pDataStr = new String(pData);
-        log.info(pDataStr);
-        queue.offer(pDataStr);
+        if (pData != null){
+            instance.putInQueue(pData);
+        }
+
+    }
+
+    private void putInQueue(byte[] msg){
+        if (queue != null) {
+            queue.offer(new String(msg));
+        }
     }
 
     public static BlockingQueue<String> getQueue() {

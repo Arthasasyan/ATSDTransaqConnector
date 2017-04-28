@@ -7,6 +7,9 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -15,55 +18,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Main {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Main.class);
     private TXmlConnector64 con = new TXmlConnector64();
+    BlockingQueue<String> queue = new ArrayBlockingQueue<>(100_000);
+    private Callback cb = Callback.getInstance(queue);
 
-    public static void main(String[] args) {
+    private static Connect connect = new Connect();
 
-
-        Main main = new Main();
-
-        main.start();
-
-
-
-    }
-
-    private void start() {
-//        log.info("Start");
-        Integer i = 1;
-        Reference<Integer> ref = new SoftReference<>(i);
-
-//        boolean fromHell = con.SetCallback(Callback.callback);
-        String path = TXmlConnector64.class.getClassLoader().getResource("txmlconnector64.dll").getPath();
-        path = path.replaceFirst("/", "").replace("/", "\\");
-        //path = "C:\\libs\\txmlconnector64.dll";
-//        log.info(path);
-        boolean success;
-        int fail_count = 0;
-        do {
-            success= con.initDll(path);
-            log.info("initDll:" + success);
-            if (!success){
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            fail_count++;
-        } while (!success && fail_count < 10);
-
-
-        byte[] initRes = con.Initialize("C:/log", 3);
-
-        String initResStr = new String(initRes);
-        log.info("initRes:" + initResStr);
-
-        Callback cb = new Callback(new LinkedBlockingQueue<>(10000));
-
-        boolean callbackRes = con.SetCallback(cb);
-        log.info("callbackRes:" + callbackRes);
-
-        Connect connect = new Connect();
+    static {
         connect.getLogin().setBody("TCNN9964");
         connect.getPassword().setBody("v8JUF8");
         connect.getHost().setBody("tr1-demo5.finam.ru");
@@ -75,45 +35,145 @@ public class Main {
         connect.getRqdelay().setBody("1000");
         connect.getSession_timeout().setBody("10");
         connect.getRequest_timeout().setBody("5");
-        connect.getProxy().attributs.put("type","HTTP-CONNECT");
-        connect.getProxy().attributs.put("addr","bproxy.msk.mts.ru");
-        connect.getProxy().attributs.put("port","3131");
-        connect.getProxy().attributs.put("login","vabelyk2");
-        connect.getProxy().attributs.put("password","br--tha7");
+//        connect.getProxy().attributs.put("type","HTTP-CONNECT");
+//        connect.getProxy().attributs.put("addr","bproxy.msk.mts.ru");
+//        connect.getProxy().attributs.put("port","3131");
+//        connect.getProxy().attributs.put("login","vabelyk2");
+//        connect.getProxy().attributs.put("password","br--tha7");
+    }
 
-        log.info("elem size:" + connect.getElements().size());
-        log.info(connect.getXml());
+    public static void main(String[] args) {
+        Thread.currentThread().setName("MainTestThread");
+        Main main = new Main();
+
+        CallbackReader cbr = new CallbackReader(main.queue);
+        Thread t = new Thread(cbr);
+        t.setName("CallbackReader");
+        t.start();
 
 
 
-        String cmdResStr = con.sendCommand(connect.getXml());
+//            int i = 0;
+//            while (i < 50) {
+//
+//                log.info("start iteration:" + i);
+//                if (!main.test())
+//                    return;
+//                i++;
+//                try {
+//                    Thread.sleep(1_000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+
+
+
+
+        boolean start = main.start();
+        if (!start) {
+            log.error("Fail start");
+            return;
+        }
 
         try {
-            Thread.sleep(10_000);
+            Thread.sleep(3_000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        log.info("cmdRes:" + cmdResStr);
+        int i = 0;
+        while (i < 50) {
+            log.info("connect:" + main.con.sendCommand(connect.getXml()));
+            try {
+                Thread.sleep(15_000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            log.info("disconnect:" + main.con.sendCommand("<command id=\"disconnect\"/>"));
+//            try {
+//                Thread.sleep(1_000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+            i++;
+        }
+
+        cbr.run = false;
+        main.end();
 
 
-//        try {
-//            Thread.sleep(10000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-        log.info("end");
     }
 
-
-    public static String bytesToStringUTFCustom(byte[] bytes) {
-        char[] buffer = new char[bytes.length >> 1];
-        for (int i = 0; i < buffer.length; i++) {
-            int bpos = i << 1;
-            char c = (char) (((bytes[bpos] & 0x00FF) << 8) + (bytes[bpos + 1] & 0x00FF));
-            buffer[i] = c;
+    private boolean test() {
+        Main main = this;
+        boolean start = main.start();
+        if (!start) {
+            log.error("Fail start");
+            return false;
         }
-        return new String(buffer);
+        log.info("CallbackReader setting");
+
+        CallbackReader cbr = new CallbackReader(queue);
+//        cbr.print = false;
+        Thread t = new Thread(cbr);
+        t.setName("CallbackReader");
+        t.start();
+
+        log.info("CallbackReader have set");
+        try {
+            Thread.sleep(1_000);
+        } catch (InterruptedException e) {
+            log.error("main error:", e);
+        }
+
+        cbr.run = false;
+        main.end();
+        return true;
+    }
+
+    private boolean start() {
+        log.info("Start");
+
+        String path = TXmlConnector64.class.getClassLoader().getResource("txmlconnector64.dll").getPath();
+        path = path.replaceFirst("/", "").replace("/", "\\");
+        boolean success;
+        int fail_count = 0;
+        int try_count = 10;
+        do {
+            success = con.initDll(path);
+            log.info("initDll:" + success);
+            if (!success) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    log.error("", e);
+                }
+            }
+            fail_count++;
+        } while (!success && fail_count < try_count);
+        if (fail_count >= try_count) {
+            return false;
+        }
+
+        String initResStr = new String(con.Initialize("C:\\log\\", 3));
+        log.info("Initialize:" + initResStr);
+        if (initResStr.contains("<error>")) {
+            return false;
+        }
+
+        log.info("SetCallback:" + con.SetCallback(cb));
+
+        //  connect();
+        log.info("Start end");
+        return true;
+    }
+
+    private void end() {
+        log.info("end start");
+        String uninitResStr = new String(con.UnInitialize());
+        log.info("UnInitialize:" + uninitResStr);
+        log.info("end end");
     }
 
 
