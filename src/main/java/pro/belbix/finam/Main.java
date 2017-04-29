@@ -1,16 +1,9 @@
 package pro.belbix.finam;
 
 import org.slf4j.LoggerFactory;
-import pro.belbix.finam.commands.Connect;
 
-import java.lang.ref.PhantomReference;
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
-import java.lang.reflect.Method;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created by Belykh Vsevolod on 22.04.2017.
@@ -21,20 +14,27 @@ public class Main {
     BlockingQueue<String> queue = new ArrayBlockingQueue<>(100_000);
     private Callback cb = Callback.getInstance(queue);
 
-    private static Connect connect = new Connect();
+    private static Command connect = new Command();
+    private static Command disconnect = new Command();
 
     static {
-        connect.getLogin().setBody("TCNN9964");
-        connect.getPassword().setBody("v8JUF8");
-        connect.getHost().setBody("tr1-demo5.finam.ru");
-        connect.getPort().setBody("3939");
-        connect.getAutopos().setBody("false");
-        connect.getMicex_registers().setBody("true");
-        connect.getMilliseconds().setBody("true");
-        connect.getUtc_time().setBody("false");
-        connect.getRqdelay().setBody("1000");
-        connect.getSession_timeout().setBody("10");
-        connect.getRequest_timeout().setBody("5");
+        connect.initRoot("command");
+        connect.setRootAttribute("id","connect");
+        connect.addElemet("login","TCNN9964");
+        connect.addElemet("password","v8JUF8");
+        connect.addElemet("host","tr1-demo5.finam.ru");
+        connect.addElemet("port","3939");
+        connect.addElemet("autopos","false");
+        connect.addElemet("micex_registers","true");
+        connect.addElemet("milliseconds","true");
+        connect.addElemet("utc_time","false");
+        connect.addElemet("rqdelay","100");
+        connect.addElemet("session_timeout","120");
+        connect.addElemet("request_timeout","20");
+
+        disconnect.initRoot("command");
+        disconnect.setRootAttribute("id","disconnect");
+
 //        connect.getProxy().attributs.put("type","HTTP-CONNECT");
 //        connect.getProxy().attributs.put("addr","bproxy.msk.mts.ru");
 //        connect.getProxy().attributs.put("port","3131");
@@ -83,14 +83,14 @@ public class Main {
         }
 
         int i = 0;
-        while (i < 50) {
-            log.info("connect:" + main.con.sendCommand(connect.getXml()));
+        while (i < 1) {
+            log.info("connect:" + main.con.sendCommand(connect.getStringXml()));
             try {
-                Thread.sleep(15_000);
+                Thread.sleep(5_000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            log.info("disconnect:" + main.con.sendCommand("<command id=\"disconnect\"/>"));
+            log.info("disconnect:" + main.con.sendCommand(disconnect.getStringXml()));
 //            try {
 //                Thread.sleep(1_000);
 //            } catch (InterruptedException e) {
@@ -101,8 +101,6 @@ public class Main {
 
         cbr.run = false;
         main.end();
-
-
     }
 
     private boolean test() {
@@ -135,7 +133,7 @@ public class Main {
     private boolean start() {
         log.info("Start");
 
-        String path = TXmlConnector64.class.getClassLoader().getResource("txmlconnector64.dll").getPath();
+        String path = TXmlConnector64.class.getClassLoader().getResource("txcn64.dll").getPath();
         path = path.replaceFirst("/", "").replace("/", "\\");
         boolean success;
         int fail_count = 0;
