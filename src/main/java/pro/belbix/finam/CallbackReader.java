@@ -13,6 +13,7 @@ public class CallbackReader implements Runnable {
     boolean run = true;
     boolean print = true;
     private BlockingQueue<String> queue = null;
+    private CallbackWriter writer =  new CallbackWriter();
 
     public CallbackReader(BlockingQueue<String> queue) {
         this.queue = queue;
@@ -31,7 +32,8 @@ public class CallbackReader implements Runnable {
                 log.error("CallbackReader error:", e);
             }
             if (str != null && print) {
-                log.info(str);
+//                log.info(str);
+                writer.write(str);
             }
         }
     }
