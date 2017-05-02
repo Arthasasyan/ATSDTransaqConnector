@@ -16,10 +16,10 @@ import java.util.Map;
 /**
  * Created by vabelyk2 on 28.04.2017.
  */
-public class Command {
+public class Command extends XmlElement{
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Command.class);
 
-    private Document doc = null;
+//    private Document doc = null;
     private Element rootElement = null;
 
     public Command() {
@@ -70,23 +70,4 @@ public class Command {
         rootElement.appendChild(element);
         return element;
     }
-
-
-
-    public String getStringXml() {
-        StringWriter writer = new StringWriter();
-        StringBuffer strB = writer.getBuffer();
-        try {
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer =transformerFactory.newTransformer();
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-            DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(writer);
-            transformer.transform(source, result);
-        } catch (TransformerException e) {
-            e.printStackTrace();
-        }
-        return strB.toString();
-    }
-
 }
