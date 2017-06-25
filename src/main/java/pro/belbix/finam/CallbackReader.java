@@ -27,7 +27,6 @@ public class CallbackReader implements Runnable {
                 if (queue != null) {
                     str = queue.take();
                 }
-//                Thread.sleep(1000);
             } catch (Exception e) {
                 log.error("CallbackReader error:", e);
             }

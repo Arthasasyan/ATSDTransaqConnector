@@ -2,24 +2,29 @@ package pro.belbix.finam;
 
 import org.slf4j.LoggerFactory;
 
-import java.lang.ref.Reference;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.net.URL;
 
 /**
  * Created by Belykh Vsevolod on 22.04.2017.
  */
 public class TXmlConnector64 {
+    private String dllTXmlConPath;
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(TXmlConnector64.class);
 
-    static {
-        System.load(TXmlConnector64.class.getClassLoader().getResource("finam_connector.dll").getPath());
+
+    public TXmlConnector64(String dllFinCon, String dllTXmlCon){
+        System.load(dllFinCon);
+        this.dllTXmlConPath = dllTXmlCon.replaceFirst("/", "").replace("/", "\\");
+
     }
 
-    public String sendCommand(String cmd){
+    public String sendCommand(String cmd) {
         return new String(SendCommand(cmd));
     }
 
+    public boolean initDllSimple() {
+        return initDll(dllTXmlConPath);
+    }
 
     public native boolean initDll(String path);
 

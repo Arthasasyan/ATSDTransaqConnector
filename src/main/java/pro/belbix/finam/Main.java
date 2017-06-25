@@ -10,169 +10,81 @@ import java.util.concurrent.BlockingQueue;
  */
 public class Main {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Main.class);
-    private TXmlConnector64 con = new TXmlConnector64();
-    BlockingQueue<String> queue = new ArrayBlockingQueue<>(100_000);
-    private Callback cb = Callback.getInstance(queue);
 
+    BlockingQueue<String> queue = new ArrayBlockingQueue<>(100_000);
     private static Command connect = new Command();
     private static Command disconnect = new Command();
 
     static {
         connect.initRoot("command");
-        connect.setRootAttribute("id","connect");
-        connect.addElemet("login","TCNN9964");
-        connect.addElemet("password","v8JUF8");
-        connect.addElemet("host","tr1-demo5.finam.ru");
-        connect.addElemet("port","3939");
-        connect.addElemet("autopos","false");
-        connect.addElemet("micex_registers","true");
-        connect.addElemet("milliseconds","true");
-        connect.addElemet("utc_time","false");
-        connect.addElemet("rqdelay","100");
-        connect.addElemet("session_timeout","120");
-        connect.addElemet("request_timeout","20");
+        connect.setRootAttribute("id", "connect");
+        connect.addElemet("login", "***");
+        connect.addElemet("password", "***");
+        connect.addElemet("host", "tr1-demo5.finam.ru");
+        connect.addElemet("port", "3939");
+        connect.addElemet("autopos", "false");
+        connect.addElemet("micex_registers", "true");
+        connect.addElemet("milliseconds", "true");
+        connect.addElemet("utc_time", "false");
+        connect.addElemet("rqdelay", "100");
+        connect.addElemet("session_timeout", "120");
+        connect.addElemet("request_timeout", "20");
 
         disconnect.initRoot("command");
-        disconnect.setRootAttribute("id","disconnect");
+        disconnect.setRootAttribute("id", "disconnect");
 
 //        connect.getProxy().attributs.put("type","HTTP-CONNECT");
-//        connect.getProxy().attributs.put("addr","bproxy.msk.mts.ru");
-//        connect.getProxy().attributs.put("port","3131");
-//        connect.getProxy().attributs.put("login","vabelyk2");
-//        connect.getProxy().attributs.put("password","br--tha7");
+//        connect.getProxy().attributs.put("addr","***");
+//        connect.getProxy().attributs.put("port","***");
+//        connect.getProxy().attributs.put("login","***");
+//        connect.getProxy().attributs.put("password","***");
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ClassNotFoundException {
+
         Thread.currentThread().setName("MainTestThread");
         Main main = new Main();
 
+
+
+        TXmlConnector64 con = new TXmlConnector64(Main.class.getClassLoader().getResource("finam_connector.dll").getPath(),
+                Main.class.getClassLoader().getResource("txmlconnector64.dll").getPath());
+        DefaultInit defaultInit = new DefaultInit(con, main.queue);
         CallbackReader cbr = new CallbackReader(main.queue);
         Thread t = new Thread(cbr);
         t.setName("CallbackReader");
+        t.setDaemon(true);
         t.start();
-
-
-
-//            int i = 0;
-//            while (i < 50) {
-//
-//                log.info("start iteration:" + i);
-//                if (!main.test())
-//                    return;
-//                i++;
-//                try {
-//                    Thread.sleep(1_000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-
-
-
-
-        boolean start = main.start();
-        if (!start) {
-            log.error("Fail start");
-            return;
-        }
-
         try {
-            Thread.sleep(3_000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+            boolean start = defaultInit.start();
+            if (!start) {
+                log.error("Fail start");
+                return;
+            }
 
-        int i = 0;
-        while (i < 1) {
-            log.info("connect:" + main.con.sendCommand(connect.getStringXml()));
             try {
-                Thread.sleep(5_000);
+                Thread.sleep(3_000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            log.info("disconnect:" + main.con.sendCommand(disconnect.getStringXml()));
-//            try {
-//                Thread.sleep(1_000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-            i++;
-        }
 
-        cbr.run = false;
-        main.end();
-    }
-
-    private boolean test() {
-        Main main = this;
-        boolean start = main.start();
-        if (!start) {
-            log.error("Fail start");
-            return false;
-        }
-        log.info("CallbackReader setting");
-
-        CallbackReader cbr = new CallbackReader(queue);
-//        cbr.print = false;
-        Thread t = new Thread(cbr);
-        t.setName("CallbackReader");
-        t.start();
-
-        log.info("CallbackReader have set");
-        try {
-            Thread.sleep(1_000);
-        } catch (InterruptedException e) {
-            log.error("main error:", e);
-        }
-
-        cbr.run = false;
-        main.end();
-        return true;
-    }
-
-    private boolean start() {
-        log.info("Start");
-
-        String path = TXmlConnector64.class.getClassLoader().getResource("txcn64.dll").getPath();
-        path = path.replaceFirst("/", "").replace("/", "\\");
-        boolean success;
-        int fail_count = 0;
-        int try_count = 10;
-        do {
-            success = con.initDll(path);
-            log.info("initDll:" + success);
-            if (!success) {
+            int i = 0;
+            while (i < 1) {
+                log.info("connect:" + con.sendCommand(connect.getStringXml()));
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(5_000);
                 } catch (InterruptedException e) {
-                    log.error("", e);
+                    e.printStackTrace();
                 }
+                log.info("disconnect:" + con.sendCommand(disconnect.getStringXml()));
+                i++;
             }
-            fail_count++;
-        } while (!success && fail_count < try_count);
-        if (fail_count >= try_count) {
-            return false;
+            defaultInit.stop();
+        } finally {
+            cbr.run = false;
+            log.info("Successfully exit");
         }
 
-        String initResStr = new String(con.Initialize("C:\\log\\", 3));
-        log.info("Initialize:" + initResStr);
-        if (initResStr.contains("<error>")) {
-            return false;
-        }
-
-        log.info("SetCallback:" + con.SetCallback(cb));
-
-        //  connect();
-        log.info("Start end");
-        return true;
     }
-
-    private void end() {
-        log.info("end start");
-        String uninitResStr = new String(con.UnInitialize());
-        log.info("UnInitialize:" + uninitResStr);
-        log.info("end end");
-    }
-
 
 }
