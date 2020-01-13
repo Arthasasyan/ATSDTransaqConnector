@@ -14,14 +14,16 @@ public class Main {
     BlockingQueue<String> queue = new ArrayBlockingQueue<>(100_000);
     private static Command connect = new Command();
     private static Command disconnect = new Command();
+    private static Command getSecurities = new Command();
+    private static Command subscribe = new Command();
 
     static {
         connect.initRoot("command");
         connect.setRootAttribute("id", "connect");
         connect.addElemet("login", "***");
         connect.addElemet("password", "***");
-        connect.addElemet("host", "tr1-demo5.finam.ru");
-        connect.addElemet("port", "3939");
+        connect.addElemet("host", "78.41.199.12)"); //TODO read from properties
+        connect.addElemet("port", "3900");
         connect.addElemet("autopos", "false");
         connect.addElemet("micex_registers", "true");
         connect.addElemet("milliseconds", "true");
@@ -32,6 +34,12 @@ public class Main {
 
         disconnect.initRoot("command");
         disconnect.setRootAttribute("id", "disconnect");
+
+        getSecurities.initRoot("command");
+        getSecurities.setRootAttribute("id", "get_securities");
+
+        subscribe.initRoot("subscribe");
+        subscribe.setRootAttribute("id", "subscribe"); //TODO add parameters for subscribe
 
 //        connect.getProxy().attributs.put("type","HTTP-CONNECT");
 //        connect.getProxy().attributs.put("addr","***");
@@ -50,7 +58,7 @@ public class Main {
         TXmlConnector64 con = new TXmlConnector64(Main.class.getClassLoader().getResource("finam_connector.dll").getPath(),
                 Main.class.getClassLoader().getResource("txmlconnector64.dll").getPath());
         DefaultInit defaultInit = new DefaultInit(con, main.queue);
-        CallbackReader cbr = new CallbackReader(main.queue);
+        CallbackReader cbr = new CallbackReader(main.queue, false);
         Thread t = new Thread(cbr);
         t.setName("CallbackReader");
         t.setDaemon(true);
@@ -76,6 +84,7 @@ public class Main {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                //log.info("securities: " + con.sendCommand(getSecurities.getStringXml()));
                 log.info("disconnect:" + con.sendCommand(disconnect.getStringXml()));
                 i++;
             }

@@ -46,7 +46,7 @@ public class DefaultInit {
             return false;
         }
 
-        String initResStr = new String(con.Initialize(logPath, logLevel));
+        String initResStr = new String(con.initializeTimeout(logPath, logLevel));
         log.info("Initialize:" + initResStr);
         if (initResStr.contains("<error>")) {
             return false;
