@@ -1,7 +1,6 @@
 package pro.belbix.finam;
 
 import org.slf4j.LoggerFactory;
-import pro.belbix.finam.Callback;
 
 import java.util.concurrent.BlockingQueue;
 
@@ -13,10 +12,15 @@ public class CallbackReader implements Runnable {
     boolean run = true;
     boolean print = true;
     private BlockingQueue<String> queue = null;
-    private CallbackWriter writer =  new CallbackWriter();
+    private CallbackWriter writer;
 
     public CallbackReader(BlockingQueue<String> queue) {
+        this(queue, true);
+    }
+
+    public CallbackReader(BlockingQueue<String> queue, boolean logErrors) {
         this.queue = queue;
+        this.writer = new CallbackWriter(logErrors);
     }
 
     @Override

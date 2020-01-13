@@ -2,8 +2,6 @@ package pro.belbix.finam;
 
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
-
 /**
  * Created by Belykh Vsevolod on 22.04.2017.
  */
@@ -24,6 +22,27 @@ public class TXmlConnector64 {
 
     public boolean initDllSimple() {
         return initDll(dllTXmlConPath);
+    }
+
+    public byte[] initializeTimeout(String logPath, int logLevel) {
+        byte[] result = null;
+        int fail_count = 0;
+        int try_count = 3;
+        do {
+            result = Initialize(logPath, logLevel);
+            if (result == null) {
+                fail_count++;
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    log.error("", e);
+                }
+            }
+        } while (result == null && fail_count <= try_count);
+        if (fail_count > try_count) {
+            return null; //TODO Throw exception here
+        }
+        return result;
     }
 
     public native boolean initDll(String path);
